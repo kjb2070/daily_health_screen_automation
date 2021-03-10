@@ -1,18 +1,65 @@
 import os
 import time
+import random
 import datetime
+import encryption
 from selenium import webdriver
+from datetime import datetime
+""" REMOVE COMMENTS TO ENABLE TEXT CONFIRMATION
+from twilio.rest import Client
+"""
 
 """
-    Requirements: selenium needs to be installed and Chrome Version 85
-    
+    Requirements: selenium needs to be installed and have a compatible Chrome Version (Link in README.md)
+
     Description: 
     This simple script uses Selenium in headless mode to automate the Daily Health Screen App. It also saves a
     screenshot in a folder, named after the username used, in the local directory to show it was completed
     All you have to do is fill in your username and password in the 'Info.txt' file
-    To automate you can set up task scheduler on windows or set Loop to True
+    To automate you can set up task scheduler on windows, or set Loop to True and fill out the desired completion time
+    
+    Do note that there are some extra features that are commented out for simplicity
+    Their function and how to enable them are in the README.md 
 """
-Loop = False  # Loops the program every day if True
+
+Loop = True  # Loops the program every day if True
+min_hour = 9  # Earliest hour you want the program to run
+max_hour = 11  # Latest hour you want the program to run
+File_Name = "Info.txt"  # Name of the file with the user information
+
+""" REMOVE COMMENTS TO ENABLE TEXT CONFIRMATION
+account_sid = 
+auth_token = 
+client = Client(account_sid, auth_token)
+"""
+
+
+def send_text(text):
+    """ REMOVE COMMENTS TO ENABLE TEXT CONFIRMATION
+
+    # Message format: (text, Twilio number, target number)
+    message = client.messages \
+        .create(
+            body=text,
+            from_='+15555555555',
+            to='+15555555555'
+        )
+    print(message.sid)
+    """
+    print("Sending Text:\n"+text+"\n")
+
+
+def sleep_time() -> int:
+    year = datetime.today().year
+    month = datetime.today().month
+    day = datetime.today().day + 1
+    hour = random.randint(min_hour, max_hour-1)
+    minute = random.randint(0, 59)
+
+    now = datetime.today()
+    then = datetime(year, month, day, hour, minute)
+    print("Sleeping till ", then)
+    return int((then-now).total_seconds())
 
 
 def folder_check(username):
@@ -23,9 +70,9 @@ def folder_check(username):
 
 def complete_form(username, password):
     options = webdriver.ChromeOptions()
-    # makes it headless
+    # makes it headless = True
     options.headless = True
-    date = datetime.datetime.now()
+    date = datetime.now()
     driver = webdriver.Chrome(executable_path='chromedriver\chromedriver.exe', chrome_options=options)
     driver.get('https://dailyhealth.rit.edu/')
     time.sleep(1)
@@ -52,20 +99,23 @@ def complete_form(username, password):
     driver.quit()
 
 
+def complete_group(filename):
+    users = encryption.load_file(filename)
+    for user in users:
+        print("Completing ", user, '\n')
+        complete_form(user, users[user].get_password())
+        send_text("Completed " + user)
+
+
 def main():
-    with open("Info.txt") as f:
-        for line in f:
-            fields = line.split(',')
-            complete_form(fields[0], fields[1].replace('\n', ''))
+    complete_group(File_Name)
 
     # Starts the loop if Loop is True
     while Loop:
-        # Waits 24 Hours
-        time.sleep(86400)
-        with open("Info.txt") as f:
-            for line in f:
-                fields = line.split(',')
-                complete_form(fields[0], fields[1].replace('\n', ''))
+        # Waits tills tomorrow's wake up time
+        time.sleep(sleep_time())
+        print("Running\n")
+        complete_group(File_Name)
 
 
 if __name__ == '__main__':
