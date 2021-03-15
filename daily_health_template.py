@@ -104,7 +104,7 @@ def complete_group(filename):
     for user in users:
         print("Completing ", user, '\n')
         complete_form(user, users[user].get_password())
-        send_text("Completed " + user)
+        send_text("Completed " + user + "(" + str(datetime.today().month) + "/" + str(datetime.today().day) + ")")
 
 
 def main():
